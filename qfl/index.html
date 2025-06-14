@@ -1,93 +1,194 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>QFL Ternary Plot - Lithora</title>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <title>QFL Ternary Plot</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    input, button, textarea { margin: 5px 0; padding: 8px; width: 100%; }
-    #table-container { margin-top: 20px; }
-    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-    table, th, td { border: 1px solid #ccc; }
-    th, td { padding: 8px; text-align: center; }
-    #plot { margin-top: 30px; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: rgba(24,180,36,0.1);
+      color: black;
+    }
+    textarea, button {
+      margin: 5px 0;
+      padding: 8px;
+      width: 100%;
+    }
+    .plot-wrapper {
+      display: flex;
+      gap: 20px;
+    }
+    svg {
+      background-color: white;
+      border-radius: 10px;
+    }
+    h1, h3 {
+      color: black;
+    }
+    .button-wrap {
+      margin-bottom: 20px;
+    }
+    .download-btn {
+      background-color: #1f6feb;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+    .download-btn:hover {
+      background-color: #388bfd;
+    }
   </style>
 </head>
 <body>
-  <h1>QFL Ternary Plot Tool - Lithora</h1>
-  <p>Enter comma-separated values for Quartz, Feldspar, and Lithics:</p>
-  <label>Quartz:</label>
-  <textarea id="quartz" rows="2" placeholder="e.g. 30, 40, 35"></textarea>
-  <label>Feldspar:</label>
-  <textarea id="feldspar" rows="2" placeholder="e.g. 50, 40, 45"></textarea>
-  <label>Lithics:</label>
-  <textarea id="lithics" rows="2" placeholder="e.g. 20, 20, 20"></textarea>
-  <button onclick="generatePlot()">Generate Ternary Plot</button>
+  <h1>QFL Ternary Plot</h1>
+  <label>Q (Quartz):</label>
+  <textarea id="q" rows="2" placeholder="e.g. 20, 30, 40"></textarea>
+  <label>F (Feldspar):</label>
+  <textarea id="f" rows="2" placeholder="e.g. 30, 20, 30"></textarea>
+  <label>L (Lithics):</label>
+  <textarea id="l" rows="2" placeholder="e.g. 50, 50, 30"></textarea>
 
-  <div id="table-container"></div>
-  <div id="plot"></div>
+  <div class="button-wrap">
+    <button onclick="generateQFLPlots()">Generate QFL Plots</button>
+  </div>
+
+  <div class="plot-wrapper">
+    <div>
+      <h3>Ternary Diagram</h3>
+      <svg id="qfl-raw-svg" width="500" height="450"></svg>
+      <button class="download-btn" onclick="downloadSVG('qfl-raw-svg')">📥 Download Plot</button>
+    </div>
+    <div>
+      <h3>Provenance Fields</h3>
+      <svg id="qfl-prov-svg" width="500" height="450"></svg>
+      <button class="download-btn" onclick="downloadSVG('qfl-prov-svg')">📥 Download Plot</button>
+    </div>
+  </div>
 
   <script>
     function parseCSV(input) {
       return input.split(',').map(x => parseFloat(x.trim())).filter(x => !isNaN(x));
     }
 
-    function generatePlot() {
-      const quartz = parseCSV(document.getElementById('quartz').value);
-      const feldspar = parseCSV(document.getElementById('feldspar').value);
-      const lithics = parseCSV(document.getElementById('lithics').value);
+    function ternaryToXY(a, b, c) {
+      const sum = a + b + c;
+      a /= sum; b /= sum; c /= sum;
+      const x = 0.5 * (2 * c + b);
+      const y = (Math.sqrt(3) / 2) * b;
+      return [x * 400 + 50, 400 - y * 400];
+    }
 
-      if (quartz.length !== feldspar.length || quartz.length !== lithics.length) {
-        alert('All input lists must be the same length.');
+    function drawGridLines(svg) {
+      for (let i = 10; i < 100; i += 10) {
+        let [x1, y1] = ternaryToXY(i, 100 - i, 0);
+        let [x2, y2] = ternaryToXY(i, 0, 100 - i);
+        svg.innerHTML += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#ccc" stroke-dasharray="2,2" />`;
+
+        [x1, y1] = ternaryToXY(0, i, 100 - i);
+        [x2, y2] = ternaryToXY(100 - i, i, 0);
+        svg.innerHTML += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#ccc" stroke-dasharray="2,2" />`;
+
+        [x1, y1] = ternaryToXY(100 - i, 0, i);
+        [x2, y2] = ternaryToXY(0, 100 - i, i);
+        svg.innerHTML += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#ccc" stroke-dasharray="2,2" />`;
+
+        const [tx, ty] = ternaryToXY(i, 100 - i, 0);
+        svg.innerHTML += `<text x="${tx - 20}" y="${ty}" font-size="10" fill="black">${i}%</text>`;
+      }
+    }
+
+    function drawTernaryBase(svg, labels) {
+      svg.innerHTML = '<polygon points="250,50 450,400 50,400" stroke="#000" fill="none" />';
+      drawGridLines(svg);
+      labels.forEach(l => {
+        svg.innerHTML += `<text x="${l.x}" y="${l.y}" font-size="10">${l.text}</text>`;
+      });
+    }
+
+    function plotTernaryPoints(svg, points, color) {
+      points.forEach(p => {
+        svg.innerHTML += `<circle cx="${p.x}" cy="${p.y}" r="5" fill="${color}" />`;
+        svg.innerHTML += `<text x="${p.x + 5}" y="${p.y - 5}" font-size="10">${p.label}</text>`;
+      });
+    }
+
+    function drawProvenanceFields(svg) {
+      const areas = [
+        { name: 'Basement Uplift', coords: [(100,0,0),(0,100,0),(0,85,15),(96,0,4)], color: 'rgba(255,255,204,0.6)' },
+        { name: 'Recycled Orogen', coords: [(25,0,75),(51,40,9),(96,0,4)], color: 'rgba(204,235,197,0.6)' },
+        { name: 'Undissected Arc', coords: [(0,50,50),(25,0,75),(0,0,100)], color: 'rgba(161,218,180,0.6)' },
+        { name: 'Transitional Arc', coords: [(0,50,50),(25,0,75),(33,12,55),(17,70,13),(0,85,15)], color: 'rgba(65,182,196,0.6)' },
+        { name: 'Dissected Arc', coords: [(51,40,9),(17,70,13),(33,12,55)], color: 'rgba(44,127,184,0.6)' }
+      ];
+
+      areas.forEach(area => {
+        const path = area.coords.map(tri => ternaryToXY(...tri)).map(([x,y]) => `${x},${y}`).join(' ');
+        svg.innerHTML += `<polygon points="${path}" fill="${area.color}" stroke="black" stroke-width="1" />`;
+      });
+
+      let legendY = 20;
+      areas.forEach(area => {
+        svg.innerHTML += `<rect x="350" y="${legendY}" width="15" height="15" fill="${area.color}" stroke="black" />`;
+        svg.innerHTML += `<text x="370" y="${legendY + 12}" font-size="10">${area.name}</text>`;
+        legendY += 20;
+      });
+    }
+
+    function generateQFLPlots() {
+      const q = parseCSV(document.getElementById('q').value);
+      const f = parseCSV(document.getElementById('f').value);
+      const l = parseCSV(document.getElementById('l').value);
+
+      if (!(q.length === f.length && f.length === l.length)) {
+        alert('Q, F, and L inputs must be the same length.');
         return;
       }
 
-      const data = [];
-      const tableRows = [];
-      for (let i = 0; i < quartz.length; i++) {
-        const total = quartz[i] + feldspar[i] + lithics[i];
-        const q = (quartz[i] / total * 100).toFixed(2);
-        const f = (feldspar[i] / total * 100).toFixed(2);
-        const l = (lithics[i] / total * 100).toFixed(2);
-        data.push({ a: q, b: f, c: l, label: `S ${i + 1}` });
-        tableRows.push(`<tr><td>${i + 1}</td><td>${quartz[i]}</td><td>${feldspar[i]}</td><td>${lithics[i]}</td><td>${q}</td><td>${f}</td><td>${l}</td></tr>`);
+      const qflPoints = [], qflProvPoints = [];
+
+      for (let i = 0; i < q.length; i++) {
+        const [x1, y1] = ternaryToXY(q[i], f[i], l[i]);
+        qflPoints.push({ x: x1, y: y1, label: `S${i + 1}` });
+
+        const [x2, y2] = ternaryToXY(q[i], f[i], l[i]);
+        qflProvPoints.push({ x: x2, y: y2, label: `S${i + 1}` });
       }
 
-      document.getElementById('table-container').innerHTML = `
-        <h3>Computed Data Table</h3>
-        <table>
-          <thead>
-            <tr><th>Sample</th><th>Quartz</th><th>Feldspar</th><th>Lithics</th><th>%Q</th><th>%F</th><th>%L</th></tr>
-          </thead>
-          <tbody>${tableRows.join('')}</tbody>
-        </table>
-      `;
+      const rawSvg = document.getElementById('qfl-raw-svg');
+      drawTernaryBase(rawSvg, [
+        { x: 250, y: 40, text: "Quartz" },
+        { x: 50, y: 420, text: "Feldspar" },
+        { x: 450, y: 420, text: "Lithics" }
+      ]);
+      plotTernaryPoints(rawSvg, qflPoints, 'black');
 
-      const plotData = [{
-        type: 'scatterternary',
-        mode: 'markers+text',
-        a: data.map(d => d.a),
-        b: data.map(d => d.b),
-        c: data.map(d => d.c),
-        text: data.map(d => d.label),
-        textposition: 'top center',
-        marker: { symbol: 100, color: '#007bff', size: 7 }
-      }];
+      const provSvg = document.getElementById('qfl-prov-svg');
+      drawTernaryBase(provSvg, [
+        { x: 250, y: 40, text: "Quartz" },
+        { x: 50, y: 420, text: "Feldspar" },
+        { x: 450, y: 420, text: "Lithics" }
+      ]);
+      drawProvenanceFields(provSvg);
+      plotTernaryPoints(provSvg, qflProvPoints, 'black');
+    }
 
-      const layout = {
-        ternary: {
-          sum: 100,
-          aaxis: { title: 'Quartz', min: 0.01 },
-          baxis: { title: 'Feldspar', min: 0.01 },
-          caxis: { title: 'Lithics', min: 0.01 }
-        },
-        margin: { t: 50 },
-      };
+    function downloadSVG(svgId) {
+      const svg = document.getElementById(svgId);
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
 
-      Plotly.newPlot('plot', plotData, layout);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = svgId + '.svg';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   </script>
 </body>
