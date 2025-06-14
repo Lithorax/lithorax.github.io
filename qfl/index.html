@@ -3,15 +3,92 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>QFL Ternary Builder</title>
-  <link rel="stylesheet" href="qfl.css"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QFL Ternary Plot - Lithora</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input, button, textarea { margin: 5px 0; padding: 8px; width: 100%; }
+    #table-container { margin-top: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    table, th, td { border: 1px solid #ccc; }
+    th, td { padding: 8px; text-align: center; }
+    #plot { margin-top: 30px; }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>QFL Ternary Plot Builder</h1>
-    <p>Upload and visualize sandstone composition as a ternary diagram.</p>
-  </div>
-  <script src="qfl.js"></script>
+  <h1>QFL Ternary Plot Tool - Lithora</h1>
+  <p>Enter comma-separated values for Quartz, Feldspar, and Lithics:</p>
+  <label>Quartz:</label>
+  <textarea id="quartz" rows="2" placeholder="e.g. 30, 40, 35"></textarea>
+  <label>Feldspar:</label>
+  <textarea id="feldspar" rows="2" placeholder="e.g. 50, 40, 45"></textarea>
+  <label>Lithics:</label>
+  <textarea id="lithics" rows="2" placeholder="e.g. 20, 20, 20"></textarea>
+  <button onclick="generatePlot()">Generate Ternary Plot</button>
+
+  <div id="table-container"></div>
+  <div id="plot"></div>
+
+  <script>
+    function parseCSV(input) {
+      return input.split(',').map(x => parseFloat(x.trim())).filter(x => !isNaN(x));
+    }
+
+    function generatePlot() {
+      const quartz = parseCSV(document.getElementById('quartz').value);
+      const feldspar = parseCSV(document.getElementById('feldspar').value);
+      const lithics = parseCSV(document.getElementById('lithics').value);
+
+      if (quartz.length !== feldspar.length || quartz.length !== lithics.length) {
+        alert('All input lists must be the same length.');
+        return;
+      }
+
+      const data = [];
+      const tableRows = [];
+      for (let i = 0; i < quartz.length; i++) {
+        const total = quartz[i] + feldspar[i] + lithics[i];
+        const q = (quartz[i] / total * 100).toFixed(2);
+        const f = (feldspar[i] / total * 100).toFixed(2);
+        const l = (lithics[i] / total * 100).toFixed(2);
+        data.push({ a: q, b: f, c: l, label: `S ${i + 1}` });
+        tableRows.push(`<tr><td>${i + 1}</td><td>${quartz[i]}</td><td>${feldspar[i]}</td><td>${lithics[i]}</td><td>${q}</td><td>${f}</td><td>${l}</td></tr>`);
+      }
+
+      document.getElementById('table-container').innerHTML = `
+        <h3>Computed Data Table</h3>
+        <table>
+          <thead>
+            <tr><th>Sample</th><th>Quartz</th><th>Feldspar</th><th>Lithics</th><th>%Q</th><th>%F</th><th>%L</th></tr>
+          </thead>
+          <tbody>${tableRows.join('')}</tbody>
+        </table>
+      `;
+
+      const plotData = [{
+        type: 'scatterternary',
+        mode: 'markers+text',
+        a: data.map(d => d.a),
+        b: data.map(d => d.b),
+        c: data.map(d => d.c),
+        text: data.map(d => d.label),
+        textposition: 'top center',
+        marker: { symbol: 100, color: '#007bff', size: 7 }
+      }];
+
+      const layout = {
+        ternary: {
+          sum: 100,
+          aaxis: { title: 'Quartz', min: 0.01 },
+          baxis: { title: 'Feldspar', min: 0.01 },
+          caxis: { title: 'Lithics', min: 0.01 }
+        },
+        margin: { t: 50 },
+      };
+
+      Plotly.newPlot('plot', plotData, layout);
+    }
+  </script>
 </body>
 </html>
