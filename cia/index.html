@@ -1,17 +1,110 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>CIA Analyzer</title>
-  <link rel="stylesheet" href="cia.css"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QFL Ternary Plot Tool</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .input-group {
+      margin-bottom: 10px;
+    }
+    .input-group label {
+      display: inline-block;
+      width: 100px;
+    }
+    #plot {
+      width: 100%;
+      max-width: 700px;
+      height: 600px;
+    }
+    button {
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Chemical Index of Alteration (CIA)</h1>
-    <p>Calculate CIA values from geochemical datasets.</p>
+  <h1>QFL Ternary Plot (Manual Input)</h1>
+
+  <div class="input-group">
+    <label for="q">Quartz (Q):</label>
+    <input type="number" id="q" value="30">
   </div>
-  <script src="cia.js"></script>
+  <div class="input-group">
+    <label for="f">Feldspar (F):</label>
+    <input type="number" id="f" value="40">
+  </div>
+  <div class="input-group">
+    <label for="l">Lithics (L):</label>
+    <input type="number" id="l" value="30">
+  </div>
+
+  <button onclick="plotTernary()">Plot</button>
+  <button onclick="downloadCSV()">Download CSV</button>
+
+  <div id="plot"></div>
+
+  <script>
+    function plotTernary() {
+      let q = parseFloat(document.getElementById('q').value);
+      let f = parseFloat(document.getElementById('f').value);
+      let l = parseFloat(document.getElementById('l').value);
+
+      let total = q + f + l;
+      q = (q / total) * 100;
+      f = (f / total) * 100;
+      l = (l / total) * 100;
+
+      let data = [{
+        type: 'scatterternary',
+        mode: 'markers+text',
+        a: [q],
+        b: [f],
+        c: [l],
+        marker: {
+          symbol: 100,
+          color: 'blue',
+          size: 12
+        },
+        text: ['Sample 1'],
+        textposition: 'top center'
+      }];
+
+      let layout = {
+        ternary: {
+          sum: 100,
+          aaxis: { title: 'Quartz (Q)', min: 0.01 },
+          baxis: { title: 'Feldspar (F)', min: 0.01 },
+          caxis: { title: 'Lithics (L)', min: 0.01 }
+        },
+        margin: { t: 40, r: 10, l: 10, b: 10 },
+        title: 'QFL Ternary Diagram'
+      };
+
+      Plotly.newPlot('plot', data, layout);
+    }
+
+    function downloadCSV() {
+      let q = document.getElementById('q').value;
+      let f = document.getElementById('f').value;
+      let l = document.getElementById('l').value;
+      let csv = 'Quartz,Feldspar,Lithics\n' + `${q},${f},${l}\n`;
+
+      let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      let link = document.createElement('a');
+      link.setAttribute('href', URL.createObjectURL(blob));
+      link.setAttribute('download', 'qfl_sample.csv');
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    window.onload = plotTernary;
+  </script>
 </body>
 </html>
