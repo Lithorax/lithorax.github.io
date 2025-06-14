@@ -1,0 +1,1 @@
+console.log("QFL Ternary Module Loaded");
