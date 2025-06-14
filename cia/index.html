@@ -1,110 +1,143 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QFL Ternary Plot Tool</title>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CIA Analysis Tool - Lithora</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-    .input-group {
-      margin-bottom: 10px;
-    }
-    .input-group label {
-      display: inline-block;
-      width: 100px;
-    }
-    #plot {
-      width: 100%;
-      max-width: 700px;
-      height: 600px;
-    }
-    button {
-      margin-top: 10px;
-    }
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input, button, textarea { margin: 5px 0; padding: 8px; width: 100%; }
+    #table-container, #cia-plot, #ternary-plot { margin-top: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    table, th, td { border: 1px solid #ccc; }
+    th, td { padding: 8px; text-align: center; }
+    #ternary-svg { width: 500px; height: 450px; border: 1px solid #ccc; }
   </style>
 </head>
 <body>
-  <h1>QFL Ternary Plot (Manual Input)</h1>
+  <h1>CIA Analysis Tool - Lithora</h1>
+  <p>Enter comma-separated oxide values for each sample:</p>
+  <label>Al<sub>2</sub>O<sub>3</sub>:</label>
+  <textarea id="al2o3" rows="2" placeholder="e.g. 15, 18, 20"></textarea>
+  <label>CN (CaO + Na<sub>2</sub>O):</label>
+  <textarea id="cn" rows="2" placeholder="e.g. 8, 6.5, 5"></textarea>
+  <label>K<sub>2</sub>O:</label>
+  <textarea id="k2o" rows="2" placeholder="e.g. 1.5, 2, 1"></textarea>
+  <button onclick="generateAnalysis()">Generate CIA Analysis</button>
 
-  <div class="input-group">
-    <label for="q">Quartz (Q):</label>
-    <input type="number" id="q" value="30">
+  <div id="table-container"></div>
+  <div id="cia-plot"></div>
+  <div id="ternary-plot">
+    <h3>Ternary Diagram (Al₂O₃ - CN - K₂O)</h3>
+    <svg id="ternary-svg"></svg>
   </div>
-  <div class="input-group">
-    <label for="f">Feldspar (F):</label>
-    <input type="number" id="f" value="40">
-  </div>
-  <div class="input-group">
-    <label for="l">Lithics (L):</label>
-    <input type="number" id="l" value="30">
-  </div>
-
-  <button onclick="plotTernary()">Plot</button>
-  <button onclick="downloadCSV()">Download CSV</button>
-
-  <div id="plot"></div>
 
   <script>
-    function plotTernary() {
-      let q = parseFloat(document.getElementById('q').value);
-      let f = parseFloat(document.getElementById('f').value);
-      let l = parseFloat(document.getElementById('l').value);
-
-      let total = q + f + l;
-      q = (q / total) * 100;
-      f = (f / total) * 100;
-      l = (l / total) * 100;
-
-      let data = [{
-        type: 'scatterternary',
-        mode: 'markers+text',
-        a: [q],
-        b: [f],
-        c: [l],
-        marker: {
-          symbol: 100,
-          color: 'blue',
-          size: 12
-        },
-        text: ['Sample 1'],
-        textposition: 'top center'
-      }];
-
-      let layout = {
-        ternary: {
-          sum: 100,
-          aaxis: { title: 'Quartz (Q)', min: 0.01 },
-          baxis: { title: 'Feldspar (F)', min: 0.01 },
-          caxis: { title: 'Lithics (L)', min: 0.01 }
-        },
-        margin: { t: 40, r: 10, l: 10, b: 10 },
-        title: 'QFL Ternary Diagram'
-      };
-
-      Plotly.newPlot('plot', data, layout);
+    function parseCSV(input) {
+      return input.split(',').map(x => parseFloat(x.trim())).filter(x => !isNaN(x));
     }
 
-    function downloadCSV() {
-      let q = document.getElementById('q').value;
-      let f = document.getElementById('f').value;
-      let l = document.getElementById('l').value;
-      let csv = 'Quartz,Feldspar,Lithics\n' + `${q},${f},${l}\n`;
-
-      let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      let link = document.createElement('a');
-      link.setAttribute('href', URL.createObjectURL(blob));
-      link.setAttribute('download', 'qfl_sample.csv');
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    function ternaryToXY(a, b, c) {
+      const sum = a + b + c;
+      a /= sum; b /= sum; c /= sum;
+      const x = 0.5 * (2 * c + b);
+      const y = (Math.sqrt(3) / 2) * b;
+      return [x * 400 + 50, 400 - y * 400];
     }
 
-    window.onload = plotTernary;
+    function drawGuides(svg) {
+      const lines = [50, 100, 150, 200, 250];
+      const texts = ["0", "50", "Weak weathering", "Intermediate weathering", "Strong weathering"];
+      lines.forEach((y, i) => {
+        svg.innerHTML += `<line x1="50" y1="${y}" x2="450" y2="${y}" stroke="#aaa" stroke-dasharray="4 2"/>`;
+        svg.innerHTML += `<text x="55" y="${y - 5}" font-size="10">${texts[i]}</text>`;
+      });
+
+      const labels = [
+        { x: 250, y: 40, text: "A (Al₂O₃)" },
+        { x: 50, y: 420, text: "CN (CaO + Na₂O)" },
+        { x: 450, y: 420, text: "K (K₂O)" },
+        { x: 280, y: 120, text: "Kaolinite" },
+        { x: 370, y: 170, text: "Illite" },
+        { x: 400, y: 190, text: "Muscovite" },
+        { x: 380, y: 240, text: "K-feldspar" },
+        { x: 180, y: 230, text: "Smectite" },
+        { x: 150, y: 270, text: "Plagioclase" },
+        { x: 240, y: 270, text: "Average gabbro" },
+        { x: 300, y: 270, text: "Average granite" }
+      ];
+
+      labels.forEach(l => {
+        svg.innerHTML += `<text x="${l.x}" y="${l.y}" font-size="10">${l.text}</text>`;
+      });
+
+      // Red arrows (mock data)
+      svg.innerHTML += `<line x1="180" y1="230" x2="240" y2="120" stroke="red" stroke-width="2" marker-end="url(#arrowhead)"/>`;
+      svg.innerHTML += `<line x1="280" y1="250" x2="360" y2="120" stroke="red" stroke-width="2" marker-end="url(#arrowhead)"/>`;
+    }
+
+    function generateAnalysis() {
+      const al2o3 = parseCSV(document.getElementById('al2o3').value);
+      const cn = parseCSV(document.getElementById('cn').value);
+      const k2o = parseCSV(document.getElementById('k2o').value);
+
+      if (!(al2o3.length === cn.length && cn.length === k2o.length)) {
+        alert('All input lists must be the same length.');
+        return;
+      }
+
+      const tableRows = [];
+      const ciaValues = [];
+      const points = [];
+
+      for (let i = 0; i < al2o3.length; i++) {
+        const cia = (al2o3[i] / (al2o3[i] + cn[i] + k2o[i])) * 100;
+        ciaValues.push(cia.toFixed(2));
+
+        const a = al2o3[i];
+        const b = cn[i];
+        const c = k2o[i];
+        const [x, y] = ternaryToXY(a, b, c);
+        points.push({ x, y, label: `S${i + 1}` });
+
+        tableRows.push(`<tr><td>${i + 1}</td><td>${al2o3[i]}</td><td>${cn[i]}</td><td>${k2o[i]}</td><td>${cia.toFixed(2)}</td></tr>`);
+      }
+
+      document.getElementById('table-container').innerHTML = `
+        <h3>CIA Table</h3>
+        <table>
+          <thead>
+            <tr><th>Sample</th><th>Al₂O₃</th><th>CN</th><th>K₂O</th><th>CIA</th></tr>
+          </thead>
+          <tbody>${tableRows.join('')}</tbody>
+        </table>
+      `;
+
+      const plotContainer = document.getElementById('cia-plot');
+      plotContainer.innerHTML = `<h3>CIA Plot</h3><svg width="500" height="300">
+        <line x1="40" y1="10" x2="40" y2="260" stroke="#000" />
+        <line x1="40" y1="260" x2="480" y2="260" stroke="#000" />
+        ${ciaValues.map((v, i) => {
+          const x = 50 + i * 40;
+          const y = 260 - (v / 100 * 250);
+          return `<circle cx="${x}" cy="${y}" r="4" fill="green" /><text x="${x}" y="${y - 8}" font-size="10" text-anchor="middle">S${i + 1}</text>`;
+        }).join('')}
+      </svg>`;
+
+      const svg = document.getElementById('ternary-svg');
+      svg.innerHTML = `
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="red" />
+          </marker>
+        </defs>
+        <polygon points="250,50 450,400 50,400" stroke="#000" fill="none" />
+      `;
+
+      drawGuides(svg);
+
+      svg.innerHTML += points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="5" fill="orange" /><text x="${p.x + 5}" y="${p.y - 5}" font-size="10">${p.label}</text>`).join('');
+    }
   </script>
 </body>
 </html>
