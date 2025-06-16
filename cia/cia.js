@@ -104,3 +104,6 @@ function generateAnalysis() {
   svg.innerHTML += points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="5" fill="orange" />
     <text x="${p.x + 5}" y="${p.y - 5}" font-size="10">${p.label}</text>`).join('');
 }
+
+window.generateAnalysis = generateAnalysis;
+
