@@ -8,7 +8,7 @@ function ternaryToXY(a, b, c) {
   const sum = a + b + c;
   a /= sum; b /= sum; c /= sum;
   const x = 0.5 * (2 * c + a);
-  const y = 1 * a;
+  const y = (Math.sqrt (3)/2) * a;
   return [x * 400 + 50, 400 - y * 400];
 }
 
