@@ -1,21 +1,29 @@
-
 body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #f8f8f8;
-  color: #222;
-  padding: 40px;
+  font-family: Arial, sans-serif;
+  padding: 20px;
+}
+input, button, textarea {
+  margin: 5px 0;
+  padding: 8px;
+  width: 100%;
+}
+#table-container, #cia-plot, #ternary-plot {
+  margin-top: 20px;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 10px;
+}
+table, th, td {
+  border: 1px solid #ccc;
+}
+th, td {
+  padding: 8px;
   text-align: center;
 }
-
-.container {
-  max-width: 700px;
-  margin: auto;
-}
-
-h1 {
-  margin-bottom: 10px;
-}
-
-p {
-  margin-bottom: 20px;
+#ternary-svg {
+  width: 500px;
+  height: 450px;
+  border: 1px solid #ccc;
 }
