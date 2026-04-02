@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Chat Viewer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f3ee;
+    --surface: #ffffff;
+    --surface2: #f0ede7;
+    --border: #e2ddd6;
+    --text: #1a1714;
+    --text-muted: #7a746d;
+    --text-faint: #b0a99f;
+    --human-bubble: #1a1714;
+    --human-text: #f5f3ee;
+    --claude-bubble: #ffffff;
+    --claude-text: #1a1714;
+    --accent: #c17b3f;
+    --accent-light: #f5e8d8;
+    --radius: 16px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  .logo-dot {
+    width: 28px; height: 28px;
+    background: var(--text);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-dot svg { width: 14px; height: 14px; fill: var(--bg); }
+
+  /* ── Layout ── */
+  .app {
+    display: flex;
+    flex: 1;
+    height: calc(100vh - 60px);
+    overflow: hidden;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 300px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-top {
+    padding: 1.25rem 1.25rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-top h2 {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+  .search-wrap {
+    position: relative;
+  }
+  .search-wrap svg {
+    position: absolute;
+    left: 10px; top: 50%;
+    transform: translateY(-50%);
+    width: 14px; height: 14px;
+    stroke: var(--text-faint);
+    fill: none;
+  }
+  #conv-search {
+    width: 100%;
+    padding: 8px 10px 8px 32px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #conv-search:focus { border-color: var(--accent); }
+  #conv-search::placeholder { color: var(--text-faint); }
+
+  .conv-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+  .conv-list::-webkit-scrollbar { width: 4px; }
+  .conv-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .conv-item {
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.1s;
+    margin-bottom: 2px;
+  }
+  .conv-item:hover { background: var(--surface2); }
+  .conv-item.active { background: var(--accent-light); }
+  .conv-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+  }
+  .conv-meta {
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-top: 3px;
+  }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    display: flex;
+    gap: 0;
+    border-top: 1px solid var(--border);
+  }
+  .stat {
+    flex: 1;
+    text-align: center;
+    padding: 10px 8px;
+    border-right: 1px solid var(--border);
+  }
+  .stat:last-child { border-right: none; }
+  .stat-n { font-size: 17px; font-weight: 600; color: var(--text); line-height: 1; }
+  .stat-l { font-size: 10px; color: var(--text-faint); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* ── Main chat ── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Upload screen ── */
+  #upload-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+  }
+  .upload-card {
+    background: var(--surface);
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 3rem 2.5rem;
+    max-width: 420px;
+    width: 100%;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .upload-card:hover { border-color: var(--accent); background: var(--accent-light); }
+  .upload-card.drag-over { border-color: var(--accent); background: var(--accent-light); }
+  .upload-icon {
+    width: 52px; height: 52px;
+    background: var(--text);
+    border-radius: 14px;
+    margin: 0 auto 1.25rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .upload-icon svg { width: 24px; height: 24px; stroke: var(--bg); fill: none; }
+  .upload-card h2 { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .upload-card p { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+  .upload-card .hint {
+    display: inline-block;
+    margin-top: 1.25rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    color: var(--accent);
+  }
+  #file-input { display: none; }
+
+  /* ── Chat header ── */
+  .chat-header {
+    display: none;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .chat-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.02em;
+  }
+  .chat-controls {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    align-items: center;
+  }
+  .chat-controls input {
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    width: 180px;
+    transition: border-color 0.15s;
+  }
+  .chat-controls input:focus { border-color: var(--accent); }
+  .chat-controls select {
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+  }
+
+  /* ── Messages ── */
+  #chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+  }
+  #chat-area::-webkit-scrollbar { width: 4px; }
+  #chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .msg-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .msg-row.human { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    flex-shrink: 0;
+    letter-spacing: 0.02em;
+  }
+  .avatar.av-human { background: var(--human-bubble); color: var(--human-text); }
+  .avatar.av-claude {
+    background: var(--accent-light);
+    color: var(--accent);
+    border: 1px solid #e8d0b8;
+  }
+
+  .bubble {
+    max-width: 68%;
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    word-break: break-word;
+    position: relative;
+  }
+  .msg-row.human .bubble {
+    background: var(--human-bubble);
+    color: var(--human-text);
+    border-radius: 18px 18px 4px 18px;
+  }
+  .msg-row.claude .bubble {
+    background: var(--claude-bubble);
+    color: var(--claude-text);
+    border: 1px solid var(--border);
+    border-radius: 18px 18px 18px 4px;
+  }
+
+  .timestamp {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-faint);
+    margin: 12px 0 4px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .empty-state {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-faint);
+    font-size: 14px;
+  }
+
+  /* ── Empty sidebar ── */
+  .sidebar-empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  /* ── Error toast ── */
+  #error-toast {
+    display: none;
+    position: fixed;
+    bottom: 1.5rem; left: 50%;
+    transform: translateX(-50%);
+    background: #c0392b;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    z-index: 999;
+  }
+
+  @media (max-width: 640px) {
+    .sidebar { width: 100%; position: absolute; z-index: 50; height: 100%; transform: translateX(-100%); transition: transform 0.25s; }
+    .sidebar.open { transform: translateX(0); }
+    .chat-header { display: flex !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot">
+      <svg viewBox="0 0 14 14"><path d="M7 1.5C4 1.5 1.5 4 1.5 7S4 12.5 7 12.5 12.5 10 12.5 7 10 1.5 7 1.5zm0 8.5a3 3 0 110-6 3 3 0 010 6z"/></svg>
+    </div>
+    Claude Chat Viewer
+  </div>
+  <span style="font-size:12px; color:var(--text-faint);">Your data never leaves this page</span>
+</header>
+
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+      <h2>Conversations</h2>
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="conv-search" placeholder="Filter conversations..." oninput="filterConvList()">
+      </div>
+    </div>
+
+    <div class="conv-list" id="conv-list">
+      <div class="sidebar-empty" id="sidebar-empty">Upload your<br>conversations.json<br>to get started</div>
+    </div>
+
+    <div class="stats-bar" id="stats-bar" style="display:none;">
+      <div class="stat"><div class="stat-n" id="s-convs">0</div><div class="stat-l">Chats</div></div>
+      <div class="stat"><div class="stat-n" id="s-msgs">0</div><div class="stat-l">Messages</div></div>
+      <div class="stat"><div class="stat-n" id="s-days">0</div><div class="stat-l">Days</div></div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main" id="main">
+
+    <!-- Upload screen -->
+    <div id="upload-screen">
+      <div class="upload-card" id="drop-zone"
+        onclick="document.getElementById('file-input').click()"
+        ondragover="onDragOver(event)"
+        ondragleave="onDragLeave(event)"
+        ondrop="onDrop(event)">
+        <input type="file" id="file-input" accept=".json" onchange="handleFile(event)">
+        <div class="upload-icon">
+          <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <h2>Drop your export file here</h2>
+        <p>Upload the <strong>conversations.json</strong> file from the ZIP you downloaded from Claude's Settings → Privacy → Export Data.</p>
+        <span class="hint">conversations.json</span>
+      </div>
+    </div>
+
+    <!-- Chat header -->
+    <div class="chat-header" id="chat-header">
+      <div class="chat-title" id="chat-title">Select a conversation</div>
+      <div class="chat-controls">
+        <input type="text" id="msg-search" placeholder="Search messages..." oninput="filterMessages()">
+        <select id="role-filter" onchange="filterMessages()">
+          <option value="all">All</option>
+          <option value="human">You</option>
+          <option value="assistant">Claude</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div id="chat-area"></div>
+
+    <!-- Empty state -->
+    <div class="empty-state" id="empty-state" style="display:none;">
+      No messages found.
+    </div>
+
+  </main>
+</div>
+
+<div id="error-toast"></div>
+
+<script>
+let allConvs = [];
+let currentMsgs = [];
+let activeIdx = -1;
+
+/* ── File handling ── */
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (file) readFile(file);
+}
+function onDragOver(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.add('drag-over');
+}
+function onDragLeave(e) {
+  document.getElementById('drop-zone').classList.remove('drag-over');
+}
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) readFile(file);
+}
+
+function readFile(file) {
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const data = JSON.parse(ev.target.result);
+      parseData(data);
+    } catch(err) {
+      showError('Could not parse file. Make sure it is the conversations.json from your Claude export ZIP.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ── Parse JSON ── */
+function parseData(data) {
+  let convs = [];
+  if (Array.isArray(data)) convs = data;
+  else if (data.conversations) convs = data.conversations;
+  else if (data.chat_messages || data.messages) convs = [data];
+
+  allConvs = convs.filter(c => {
+    const msgs = c.chat_messages || c.messages || [];
+    return msgs.length > 0;
+  }).sort((a, b) => {
+    const da = new Date(b.created_at || 0), db = new Date(a.created_at || 0);
+    return da - db;
+  });
+
+  if (allConvs.length === 0) {
+    showError('No conversations found in this file.');
+    return;
+  }
+
+  let totalMsgs = 0, dates = [];
+  allConvs.forEach(c => {
+    const msgs = c.chat_messages || c.messages || [];
+    totalMsgs += msgs.length;
+    if (c.created_at) dates.push(+new Date(c.created_at));
+    msgs.forEach(m => { if (m.created_at) dates.push(+new Date(m.created_at)); });
+  });
+
+  let days = 0;
+  if (dates.length > 1) {
+    days = Math.round((Math.max(...dates) - Math.min(...dates)) / 86400000) + 1;
+  }
+
+  document.getElementById('s-convs').textContent = allConvs.length;
+  document.getElementById('s-msgs').textContent = totalMsgs;
+  document.getElementById('s-days').textContent = days;
+  document.getElementById('stats-bar').style.display = 'flex';
+
+  document.getElementById('upload-screen').style.display = 'none';
+  document.getElementById('chat-header').style.display = 'flex';
+  document.getElementById('chat-area').style.display = 'flex';
+
+  renderConvList(allConvs);
+  loadConv(0);
+}
+
+/* ── Conversation list ── */
+function renderConvList(convs) {
+  const list = document.getElementById('conv-list');
+  list.innerHTML = '';
+  if (convs.length === 0) {
+    list.innerHTML = '<div class="sidebar-empty">No conversations match.</div>';
+    return;
+  }
+  convs.forEach((c, i) => {
+    const realIdx = allConvs.indexOf(c);
+    const title = c.name || c.title || ('Conversation ' + (realIdx + 1));
+    const msgs = c.chat_messages || c.messages || [];
+    const date = c.created_at ? fmtDate(c.created_at) : (msgs[0]?.created_at ? fmtDate(msgs[0].created_at) : '');
+    const div = document.createElement('div');
+    div.className = 'conv-item' + (realIdx === activeIdx ? ' active' : '');
+    div.dataset.idx = realIdx;
+    div.innerHTML = `<div class="conv-title">${esc(title)}</div><div class="conv-meta">${msgs.length} messages${date ? ' · ' + date : ''}</div>`;
+    div.onclick = () => loadConv(realIdx);
+    list.appendChild(div);
+  });
+}
+
+function filterConvList() {
+  const q = document.getElementById('conv-search').value.toLowerCase();
+  const filtered = q ? allConvs.filter(c => (c.name || c.title || '').toLowerCase().includes(q)) : allConvs;
+  renderConvList(filtered);
+}
+
+/* ── Load conversation ── */
+function loadConv(idx) {
+  activeIdx = idx;
+  const conv = allConvs[idx];
+  currentMsgs = conv.chat_messages || conv.messages || [];
+  const title = conv.name || conv.title || ('Conversation ' + (idx + 1));
+  document.getElementById('chat-title').textContent = title;
+  document.getElementById('msg-search').value = '';
+  document.getElementById('role-filter').value = 'all';
+  // Update active state
+  document.querySelectorAll('.conv-item').forEach(el => {
+    el.classList.toggle('active', +el.dataset.idx === idx);
+  });
+  renderMessages(currentMsgs);
+}
+
+/* ── Render messages ── */
+function renderMessages(msgs) {
+  const area = document.getElementById('chat-area');
+  const empty = document.getElementById('empty-state');
+  area.innerHTML = '';
+
+  if (msgs.length === 0) {
+    empty.style.display = 'flex';
+    return;
+  }
+  empty.style.display = 'none';
+
+  let lastDate = '';
+  msgs.forEach(m => {
+    const role = (m.sender || m.role || '').toLowerCase();
+    const isHuman = role === 'human' || role === 'user';
+    const text = extractText(m);
+    if (!text && !text === '') return;
+
+    if (m.created_at) {
+      const d = fmtDate(m.created_at);
+      if (d !== lastDate) {
+        const ts = document.createElement('div');
+        ts.className = 'timestamp';
+        ts.textContent = fmtDateTime(m.created_at);
+        area.appendChild(ts);
+        lastDate = d;
+      }
+    }
+
+    const row = document.createElement('div');
+    row.className = 'msg-row ' + (isHuman ? 'human' : 'claude');
+
+    const av = document.createElement('div');
+    av.className = 'avatar ' + (isHuman ? 'av-human' : 'av-claude');
+    av.textContent = isHuman ? 'You' : 'AI';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = text;
+
+    row.appendChild(av);
+    row.appendChild(bubble);
+    area.appendChild(row);
+  });
+
+  area.scrollTop = area.scrollHeight;
+}
+
+/* ── Filter messages ── */
+function filterMessages() {
+  const q = document.getElementById('msg-search').value.toLowerCase();
+  const role = document.getElementById('role-filter').value;
+  let filtered = currentMsgs;
+  if (role !== 'all') {
+    filtered = filtered.filter(m => {
+      const r = (m.sender || m.role || '').toLowerCase();
+      return role === 'human' ? (r === 'human' || r === 'user') : (r === 'assistant' || r === 'claude');
+    });
+  }
+  if (q) filtered = filtered.filter(m => (extractText(m) || '').toLowerCase().includes(q));
+  renderMessages(filtered);
+}
+
+/* ── Helpers ── */
+function extractText(m) {
+  if (typeof m.text === 'string') return m.text;
+  if (typeof m.content === 'string') return m.content;
+  if (Array.isArray(m.content)) return m.content.filter(c => c.type === 'text').map(c => c.text).join('\n');
+  if (Array.isArray(m.text)) return m.text.filter(c => c.type === 'text').map(c => c.value || c.text || '').join('\n');
+  return '';
+}
+
+function fmtDate(str) {
+  try { return new Date(str).toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' }); }
+  catch { return ''; }
+}
+
+function fmtDateTime(str) {
+  try { return new Date(str).toLocaleString(undefined, { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }); }
+  catch { return ''; }
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function showError(msg) {
+  const t = document.getElementById('error-toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 4000);
+}
+</script>
+</body>
+</html>
