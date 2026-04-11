@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="LithoLab — Open-access geoscience research platform. Free browser-based geological tools for students and researchers." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪨</text></svg>" />
+  <title>LithoLab | Geoscience Research Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ── CANVAS BACKGROUND ── -->
+<canvas id="space-canvas"></canvas>
+
+<!-- ── NAV ── -->
+<nav id="main-nav">
+  <a class="nav-brand" href="index.html">Litho<span>Lab</span></a>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu">☰</button>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="index.html" class="active">Home</a></li>
+    <li><a href="tools/index.html">Tools</a></li>
+    <li><a href="#research">Research</a></li>
+    <li><a href="#projects">Projects</a></li>
+    <li><a href="about/index.html">About</a></li>
+    <li><a href="tools/index.html" class="cta">Launch Tools →</a></li>
+  </ul>
+</nav>
+
+<!-- ── HERO ── -->
+<section id="hero">
+  <div class="hero-content">
+    <div class="hero-left">
+      <div class="eyebrow">// Open-Access · Browser-Based · No Installation</div>
+      <h1 class="hero-h1">
+        A Research Platform<br>for <span class="grad">Geoscience</span>
+      </h1>
+      <p class="hero-sub">
+        LithoLab provides free, browser-based geological calculation tools for students,
+        researchers, and field geologists — from grain-size classification to geochemical
+        weathering indices and planetary crater scaling.
+      </p>
+      <div class="hero-tags">
+        <span class="tag tg">Sedimentology</span>
+        <span class="tag ta">Geochemistry</span>
+        <span class="tag tt">Hydrogeology</span>
+        <span class="tag tg">Planetary Geology</span>
+        <span class="tag ta">Stratigraphy</span>
+      </div>
+      <div class="hero-btns">
+        <a href="tools/index.html" class="btn btn-p">🛠 Open Toolbox</a>
+        <a href="#research" class="btn btn-s">📚 Research</a>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="orbit-widget">
+        <div class="orbit-ring ring-1">
+          <div class="orbit-planet p1" title="Grain Size">🪨</div>
+        </div>
+        <div class="orbit-ring ring-2">
+          <div class="orbit-planet p2" title="CIA Index">⚗️</div>
+        </div>
+        <div class="orbit-ring ring-3">
+          <div class="orbit-planet p3" title="Crater Calc">⭕</div>
+        </div>
+        <div class="orbit-core">
+          <span>9</span>
+          <small>Tools</small>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="hero-veil"></div>
+</section>
+
+<!-- ── STATS BAR ── -->
+<section class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item">
+      <span class="stat-num">9</span>
+      <span class="stat-label">Browser Tools</span>
+    </div>
+    <div class="stat-div"></div>
+    <div class="stat-item">
+      <span class="stat-num">2</span>
+      <span class="stat-label">Publications (ScienceDirect)</span>
+    </div>
+    <div class="stat-div"></div>
+    <div class="stat-item">
+      <span class="stat-num">0</span>
+      <span class="stat-label">Install Required</span>
+    </div>
+    <div class="stat-div"></div>
+    <div class="stat-item">
+      <span class="stat-num">100%</span>
+      <span class="stat-label">Free & Open Access</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── TOOLS PREVIEW ── -->
+<section class="sec" id="tools-preview">
+  <div class="sh">
+    <span class="sh-num">01</span>
+    <h2 class="sh-title">Geological Toolbox</h2>
+    <div class="sh-line"></div>
+  </div>
+  <p class="sec-lead">
+    Nine free, in-browser calculators covering sedimentology, geochemistry, hydrogeology,
+    stratigraphy, and planetary science. No login. No download. Just science.
+  </p>
+
+  <div class="tools-grid">
+
+    <a href="tools/grain-size/index.html" class="tool-card">
+      <div class="tc-icon">🪨</div>
+      <div class="tc-tag">Sedimentology</div>
+      <h3>Grain Size Classifier</h3>
+      <p>Classify sediment by Wentworth Scale. Input mm, μm, or Φ units. Returns depositional environment interpretation.</p>
+      <span class="tc-arrow">→</span>
+    </a>
+
+    <a href="tools/cia/index.html" class="tool-card">
+      <div class="tc-icon">⚗️</div>
+      <div class="tc-tag">Geochemistry</div>
+      <h3>CIA Calculator</h3>
+      <p>Chemical Index of Alteration from major oxide inputs. Quantifies intensity of silicate weathering.</p>
+      <span class="tc-arrow">→</span>
+    </a>
+
+    <a href="tools/geo-indices/index.html" class="tool-card">
+      <div class="tc-icon">📊</div>
+      <div class="tc-tag">Geochemistry</div>
+      <h3>Geochemical Indices</h3>
+      <p>Compute CIA, PIA, CIW, ICV, and WIP simultaneously from a single oxide dataset.</p>
+      <span class="tc-arrow">→</span>
+    </a>
+
+    <a href="tools/darcy/index.html" class="tool-card">
+      <div class="tc-icon">💧</div>
+      <div class="tc-tag">Hydrogeology</div>
+      <h3>Darcy's Law</h3>
+      <p>Solve for flow rate Q, hydraulic conductivity K, or gradient i from the classic groundwater equation.</p>
+      <span class="tc-arrow">→</span>
+    </a>
+
+    <a href="tools/porosity/index.html" class="tool-card">
+      <div class="tc-icon">🔵</div>
+      <div class="tc-tag">Petrophysics</div>
+      <h3>Porosity Calculator</h3>
+      <p>Calculate porosity from density or volume measurements. Optional Kozeny-Carman permeability estimate.</p>
+      <span class="tc-arrow">→</span>
+    </a>
+
+    <a href="tools/phi/index.html" class="tool-card">
+      <div class="tc-icon">Φ</div>
+      <div class="tc-tag">Sedimentology</div>
+      <h3>Phi Scale Converter</h3>
+      <p>Bidirectional conversion between millimetres and the phi (Φ) scale. Includes Wentworth reference table.</p>
+      <span class="tc-arrow">→</span>
+    </a>
+
+    <a href="tools/rock-density/index.html" class="tool-card">
+      <div class="tc-icon">⚖️</div>
+      <div class="tc-tag">Petrophysics</div>
+      <h3>Rock Density Estimator</h3>
+      <p>Bulk density from mass/volume or from mineral volume fractions. Returns rock-type inference.</p>
+      <span class="tc-arrow">→</span>
+    </a>
+
+    <a href="tools/geo-time/index.html" class="tool-card">
+      <div class="tc-icon">⏳</div>
+      <div class="tc-tag">Stratigraphy</div>
+      <h3>Geologic Time Scale</h3>
+      <p>Interactive reference for the International Chronostratigraphic Chart — filterable by eon and searchable by period.</p>
+      <span class="tc-arrow">→</span>
+    </a>
+
+    <a href="tools/crater/index.html" class="tool-card">
+      <div class="tc-icon">⭕</div>
+      <div class="tc-tag">Planetary Geology</div>
+      <h3>Impact Crater Calculator</h3>
+      <p>Estimate final crater diameter using Pi-scaling relations (Schmidt & Housen 1987). Supports Earth, Mars, Moon, Venus.</p>
+      <span class="tc-arrow">→</span>
+    </a>
+
+  </div>
+
+  <div class="tools-cta">
+    <a href="tools/index.html" class="btn btn-p">View All Tools →</a>
+  </div>
+</section>
+
+<!-- ── RESEARCH ── -->
+<section class="sec" id="research">
+  <div class="sh">
+    <span class="sh-num">02</span>
+    <h2 class="sh-title">Research Contributions</h2>
+    <div class="sh-line"></div>
+  </div>
+  <p class="sec-lead">
+    Peer-reviewed publications indexed on ScienceDirect (2025), contributed through
+    geospatial figure preparation and graphical data visualisation.
+  </p>
+
+  <div class="research-grid">
+
+    <div class="research-card">
+      <div class="rc-header">
+        <span class="rc-badge">ScienceDirect · 2025</span>
+        <span class="rc-type">Journal Article</span>
+      </div>
+      <h3>Geomorphic index alterations and socioeconomic implications: A case study of a Coastal River system in Bangladesh</h3>
+      <p>Geospatial figure preparation and graphical outputs supporting quantitative geomorphic analysis of a coastal river system.</p>
+      <div class="rc-meta">
+        <span>📍 Bangladesh</span>
+        <span>🗺 Geomorphology · GIS</span>
+      </div>
+      <a href="https://www.sciencedirect.com/science/article/pii/S259006172500047X" target="_blank" class="rc-link">
+        View on ScienceDirect →
+      </a>
+    </div>
+
+    <div class="research-card">
+      <div class="rc-header">
+        <span class="rc-badge">ScienceDirect · 2025</span>
+        <span class="rc-type">Journal Article</span>
+      </div>
+      <h3>Hydrogeochemical characterization and quality assessment of groundwater in Amtali Upazila, Barguna: A study of coastal Bangladesh</h3>
+      <p>Graphical data visualisation supporting hydrogeochemical analysis and groundwater quality assessment in coastal Bangladesh.</p>
+      <div class="rc-meta">
+        <span>📍 Barguna, Bangladesh</span>
+        <span>💧 Hydrogeochemistry</span>
+      </div>
+      <a href="https://www.sciencedirect.com/science/article/pii/S2451912X2500025X" target="_blank" class="rc-link">
+        View on ScienceDirect →
+      </a>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── PROJECTS ── -->
+<section class="sec" id="projects">
+  <div class="sh">
+    <span class="sh-num">03</span>
+    <h2 class="sh-title">Projects</h2>
+    <div class="sh-line"></div>
+  </div>
+
+  <div class="proj-grid">
+
+    <div class="proj-card">
+      <div class="proj-icon">📡</div>
+      <div class="proj-body">
+        <h3>Radio Astronomy Telescope</h3>
+        <p>Independent construction and operation of a radio telescope detecting the 21 cm Hydrogen Line emission from the Milky Way. Covers hardware construction, signal processing, and observational data interpretation.</p>
+        <a href="https://thedailycampus.com/public-university/215873" target="_blank" class="lbtn">📰 Media Coverage →</a>
+      </div>
+    </div>
+
+    <div class="proj-card">
+      <div class="proj-icon">🔺</div>
+      <div class="proj-body">
+        <h3>QFL Ternary Builder</h3>
+        <p>Online tool for QFL (Quartz–Feldspar–Lithic) ternary diagrams used in sandstone provenance analysis. Built with Anvil and Python.</p>
+        <a href="https://shy-worthy-grass.anvil.app/" target="_blank" class="lbtn">🚀 Launch App →</a>
+      </div>
+    </div>
+
+    <div class="proj-card">
+      <div class="proj-icon">🧪</div>
+      <div class="proj-body">
+        <h3>Lithora Geoscience Toolkit</h3>
+        <p>Streamlit-based web application for complex geochemical plots and data visualisations — designed for research-grade workflows.</p>
+        <a href="https://lithora.streamlit.app/" target="_blank" class="lbtn">🚀 Launch App →</a>
+      </div>
+    </div>
+
+    <div class="proj-card">
+      <div class="proj-icon">🌍</div>
+      <div class="proj-body">
+        <h3>LithoLab Web Platform</h3>
+        <p>This platform — offering browser-based geoscience calculators, CIA tools, rainfall plotting, and geochemical analysis for researchers and students.</p>
+        <a href="https://litholab.xyz/" target="_blank" class="lbtn">🚀 Visit LithoLab →</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── ABOUT TEASER ── -->
+<section class="about-teaser">
+  <div class="at-inner">
+    <div class="at-text">
+      <div class="eyebrow">// The Researcher</div>
+      <h2>About the Author</h2>
+      <p>BSc Geology & Mining student at the University of Barishal, Bangladesh. Contributor to two ScienceDirect-indexed publications, independent radio astronomer, and developer of open-access geoscience tools.</p>
+      <a href="about/index.html" class="btn btn-s" style="margin-top:20px;display:inline-flex;">View Full CV →</a>
+    </div>
+    <div class="at-badges">
+      <div class="at-badge">🎓 University of Barishal</div>
+      <div class="at-badge">📡 21cm H-Line Detection</div>
+      <div class="at-badge">🌍 GIS & Spatial Analysis</div>
+      <div class="at-badge">🔭 Durbin Astronomy Society</div>
+      <div class="at-badge">📚 2× ScienceDirect (2025)</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer id="main-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="nav-brand" style="font-size:1.2rem;">Litho<span>Lab</span></span>
+      <p>Open-access geoscience tools for the research community.</p>
+    </div>
+    <div class="footer-links">
+      <a href="tools/index.html">Tools</a>
+      <a href="#research">Research</a>
+      <a href="#projects">Projects</a>
+      <a href="about/index.html">About</a>
+    </div>
+    <div class="footer-note">
+      © 2025 LithoLab · University of Barishal, Bangladesh<br>
+      All tools are for educational and research use only.
+    </div>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

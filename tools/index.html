@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="LithoLab Toolbox — Free browser-based geological calculators for students and researchers." />
+  <title>LithoLab | Geological Toolbox</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── VARIABLES ── */
+    :root {
+      --bg:       #04080f;
+      --surface:  #080e1a;
+      --card:     #0d1525;
+      --card-h:   #111d30;
+      --border:   #162035;
+      --border-b: #1e3055;
+      --gold:     #f59e0b;
+      --cyan:     #06b6d4;
+      --green:    #10b981;
+      --purple:   #8b5cf6;
+      --red:      #ef4444;
+      --orange:   #f97316;
+      --text:     #e2e8f0;
+      --muted:    #4a5a72;
+      --subtle:   #8899b0;
+      --display:  'Syne', sans-serif;
+      --body:     'DM Sans', sans-serif;
+      --mono:     'JetBrains Mono', monospace;
+      --radius:   14px;
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body {
+      font-family: var(--body);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+    ::-webkit-scrollbar { width:5px; }
+    ::-webkit-scrollbar-track { background:var(--bg); }
+    ::-webkit-scrollbar-thumb { background:var(--border-b); border-radius:3px; }
+
+    /* ── CANVAS ── */
+    #space-canvas {
+      position: fixed;
+      inset: 0; width:100%; height:100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top:0; left:0; right:0;
+      z-index: 1000; height:62px; padding:0 40px;
+      display:flex; align-items:center; justify-content:space-between;
+      background: rgba(4,8,15,.88);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-brand {
+      font-family:var(--display); font-size:1.1rem; font-weight:800;
+      color:var(--gold); text-decoration:none; letter-spacing:.06em;
+    }
+    .nav-brand span { color:var(--cyan); }
+    .nav-links { display:flex; gap:4px; list-style:none; align-items:center; }
+    .nav-links a {
+      font-size:.83rem; font-weight:500; color:var(--subtle);
+      text-decoration:none; padding:6px 14px; border-radius:7px; transition:all .2s;
+    }
+    .nav-links a:hover { color:var(--text); background:rgba(255,255,255,.05); }
+    .nav-links a.active { color:var(--gold); }
+    .nav-links a.cta {
+      background:var(--gold); color:var(--bg);
+      font-weight:700; margin-left:6px;
+    }
+    .nav-links a.cta:hover { background:#fbbf24; }
+    .nav-toggle {
+      display:none; background:none;
+      border:1px solid var(--border-b); color:var(--text);
+      cursor:pointer; font-size:1.2rem; padding:6px 10px; border-radius:7px;
+    }
+
+    /* ── PAGE WRAPPER ── */
+    .page {
+      position: relative; z-index:1;
+      padding-top: 62px;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER BAND ── */
+    .tools-header {
+      padding: 70px 40px 50px;
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+    .eyebrow {
+      font-family:var(--mono); font-size:.72rem; color:var(--gold);
+      text-transform:uppercase; letter-spacing:.18em;
+      margin-bottom:14px; opacity:.85;
+    }
+    .tools-header h1 {
+      font-family:var(--display); font-size:clamp(2.2rem,4vw,3.4rem);
+      font-weight:800; line-height:1.1; margin-bottom:16px;
+    }
+    .tools-header h1 span {
+      background: linear-gradient(135deg, var(--gold) 0%, #fcd34d 40%, var(--cyan) 100%);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      background-clip:text;
+    }
+    .tools-header p {
+      font-size:.93rem; color:var(--subtle);
+      max-width:620px; line-height:1.85; margin-bottom:28px;
+    }
+
+    /* ── FILTER BAR ── */
+    .filter-bar {
+      display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+      padding: 0 40px 36px;
+      max-width:1180px; margin:0 auto;
+    }
+    .filter-btn {
+      font-family:var(--mono); font-size:.72rem; font-weight:600;
+      text-transform:uppercase; letter-spacing:.08em;
+      padding:7px 16px; border-radius:100px;
+      border:1px solid var(--border-b);
+      background:transparent; color:var(--subtle);
+      cursor:pointer; transition:all .2s;
+    }
+    .filter-btn:hover { border-color:var(--gold); color:var(--text); }
+    .filter-btn.active {
+      background:var(--gold); border-color:var(--gold);
+      color:var(--bg); font-weight:700;
+    }
+
+    /* ── SEARCH ── */
+    .search-wrap {
+      padding: 0 40px 10px;
+      max-width:1180px; margin:0 auto;
+    }
+    .search-input {
+      width:100%; max-width:380px;
+      padding:10px 16px;
+      background:var(--surface);
+      border:1px solid var(--border-b);
+      border-radius:9px;
+      color:var(--text);
+      font-family:var(--mono); font-size:.83rem;
+      transition:border-color .2s;
+      outline:none;
+    }
+    .search-input::placeholder { color:var(--muted); }
+    .search-input:focus { border-color:var(--gold); }
+
+    /* ── TOOLS GRID ── */
+    .tools-main {
+      padding: 30px 40px 80px;
+      max-width:1180px; margin:0 auto;
+    }
+    .tools-grid {
+      display:grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap:22px;
+    }
+
+    /* ── TOOL CARD ── */
+    .tool-card {
+      position:relative;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:0;
+      text-decoration:none; color:var(--text);
+      display:flex; flex-direction:column;
+      transition:all .3s;
+      overflow:hidden;
+      cursor:pointer;
+    }
+    .tool-card::after {
+      content:'';
+      position:absolute; inset:0;
+      background:radial-gradient(circle at top right, var(--accent-glow) 0%, transparent 65%);
+      opacity:0; transition:opacity .3s;
+    }
+    .tool-card:hover {
+      border-color:var(--accent);
+      background:var(--card-h);
+      transform:translateY(-4px);
+      box-shadow:0 12px 40px var(--accent-shadow);
+    }
+    .tool-card:hover::after { opacity:1; }
+
+    /* colour accent per card — set via inline style */
+    .tool-card[data-cat="Sedimentology"]   { --accent:var(--gold);   --accent-glow:rgba(245,158,11,.06);  --accent-shadow:rgba(245,158,11,.14); }
+    .tool-card[data-cat="Geochemistry"]    { --accent:var(--cyan);   --accent-glow:rgba(6,182,212,.06);   --accent-shadow:rgba(6,182,212,.14); }
+    .tool-card[data-cat="Hydrogeology"]    { --accent:var(--cyan);   --accent-glow:rgba(6,182,212,.06);   --accent-shadow:rgba(6,182,212,.14); }
+    .tool-card[data-cat="Petrophysics"]    { --accent:var(--green);  --accent-glow:rgba(16,185,129,.06);  --accent-shadow:rgba(16,185,129,.14); }
+    .tool-card[data-cat="Stratigraphy"]    { --accent:var(--purple); --accent-glow:rgba(139,92,246,.06);  --accent-shadow:rgba(139,92,246,.14); }
+    .tool-card[data-cat="Planetary"]       { --accent:var(--orange); --accent-glow:rgba(249,115,22,.06);  --accent-shadow:rgba(249,115,22,.14); }
+
+    /* card top stripe */
+    .tc-stripe {
+      height:3px;
+      background:var(--accent);
+      opacity:.7;
+      transition:opacity .3s;
+    }
+    .tool-card:hover .tc-stripe { opacity:1; }
+
+    .tc-body { padding:26px 26px 22px; display:flex; flex-direction:column; gap:10px; flex:1; }
+
+    .tc-top { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+
+    .tc-icon {
+      width:52px; height:52px;
+      background:var(--surface);
+      border:1px solid var(--border-b);
+      border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.6rem; flex-shrink:0;
+      transition:all .3s;
+    }
+    .tool-card:hover .tc-icon {
+      background:rgba(255,255,255,.04);
+      border-color:var(--accent);
+      box-shadow:0 0 16px var(--accent-shadow);
+    }
+
+    .tc-meta { display:flex; flex-direction:column; gap:4px; align-items:flex-end; }
+    .tc-cat {
+      font-family:var(--mono); font-size:.62rem;
+      text-transform:uppercase; letter-spacing:.1em;
+      color:var(--accent); padding:3px 9px;
+      border:1px solid var(--accent);
+      border-radius:100px; opacity:.8;
+      white-space:nowrap;
+    }
+    .tc-num {
+      font-family:var(--mono); font-size:.6rem;
+      color:var(--muted); letter-spacing:.06em;
+    }
+
+    .tc-title {
+      font-family:var(--display); font-size:1.05rem;
+      font-weight:700; line-height:1.3;
+      transition:color .2s;
+    }
+    .tool-card:hover .tc-title { color:var(--accent); }
+
+    .tc-desc {
+      font-size:.83rem; color:var(--subtle);
+      line-height:1.7; flex:1;
+    }
+
+    .tc-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+    .tc-tag {
+      font-size:.63rem; font-family:var(--mono);
+      padding:2px 8px; border-radius:4px;
+      background:rgba(255,255,255,.03);
+      border:1px solid var(--border-b);
+      color:var(--muted);
+    }
+
+    .tc-footer {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 26px;
+      border-top:1px solid var(--border);
+      background:rgba(255,255,255,.015);
+    }
+    .tc-open {
+      font-family:var(--mono); font-size:.72rem;
+      color:var(--subtle); letter-spacing:.06em;
+      text-transform:uppercase;
+      transition:color .2s;
+    }
+    .tool-card:hover .tc-open { color:var(--accent); }
+    .tc-arrow {
+      width:28px; height:28px;
+      background:var(--surface);
+      border:1px solid var(--border-b);
+      border-radius:7px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:.9rem; color:var(--subtle);
+      transition:all .25s;
+    }
+    .tool-card:hover .tc-arrow {
+      background:var(--accent);
+      border-color:var(--accent);
+      color:var(--bg);
+      transform:translateX(2px);
+    }
+
+    /* hidden card */
+    .tool-card.hidden { display:none; }
+
+    /* no results */
+    .no-results {
+      display:none; grid-column:1/-1;
+      text-align:center; padding:60px 20px;
+      color:var(--muted);
+    }
+    .no-results.show { display:block; }
+    .no-results .nr-icon { font-size:3rem; margin-bottom:12px; opacity:.3; }
+    .no-results p { font-size:.88rem; }
+
+    /* ── STATS STRIP ── */
+    .stats-strip {
+      display:flex; gap:0;
+      background:var(--surface);
+      border-top:1px solid var(--border);
+      border-bottom:1px solid var(--border);
+      max-width:100%;
+      overflow-x:auto;
+    }
+    .ss-item {
+      flex:1; min-width:160px;
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      padding:20px 24px;
+      border-right:1px solid var(--border);
+    }
+    .ss-item:last-child { border-right:none; }
+    .ss-num {
+      font-family:var(--display); font-size:1.6rem;
+      font-weight:800; color:var(--gold);
+    }
+    .ss-lbl {
+      font-family:var(--mono); font-size:.62rem;
+      text-transform:uppercase; letter-spacing:.08em;
+      color:var(--muted); margin-top:3px;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      position:relative; z-index:1;
+      text-align:center; padding:32px 40px;
+      border-top:1px solid var(--border);
+      font-size:.78rem; color:var(--muted);
+      font-family:var(--mono);
+    }
+    footer a { color:var(--subtle); text-decoration:none; }
+    footer a:hover { color:var(--gold); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width:760px) {
+      nav { padding:0 20px; }
+      .nav-links {
+        display:none; flex-direction:column;
+        position:absolute; top:62px; left:0; right:0;
+        background:rgba(4,8,15,.97);
+        border-bottom:1px solid var(--border);
+        padding:16px; gap:6px;
+      }
+      .nav-links.open { display:flex; }
+      .nav-links li { width:100%; }
+      .nav-links a { display:block; width:100%; }
+      .nav-toggle { display:block; }
+      .tools-header { padding:50px 24px 30px; }
+      .filter-bar { padding:0 24px 24px; }
+      .search-wrap { padding:0 24px 10px; }
+      .tools-main { padding:20px 24px 60px; }
+      .tools-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="space-canvas"></canvas>
+
+<!-- NAV -->
+<nav id="main-nav">
+  <a class="nav-brand" href="../index.html">Litho<span>Lab</span></a>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu">☰</button>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="index.html" class="active">Tools</a></li>
+    <li><a href="../index.html#research">Research</a></li>
+    <li><a href="../about/index.html">About</a></li>
+    <li><a href="index.html" class="cta">All Tools</a></li>
+  </ul>
+</nav>
+
+<div class="page">
+
+  <!-- STATS STRIP -->
+  <div class="stats-strip">
+    <div class="ss-item"><span class="ss-num">9</span><span class="ss-lbl">Tools Available</span></div>
+    <div class="ss-item"><span class="ss-num">6</span><span class="ss-lbl">Disciplines</span></div>
+    <div class="ss-item"><span class="ss-num">0</span><span class="ss-lbl">Install Required</span></div>
+    <div class="ss-item"><span class="ss-num">100%</span><span class="ss-lbl">Free & Open</span></div>
+    <div class="ss-item"><span class="ss-num">∞</span><span class="ss-lbl">Calculations</span></div>
+  </div>
+
+  <!-- HEADER -->
+  <div class="tools-header">
+    <div class="eyebrow">// LithoLab · Geological Toolbox</div>
+    <h1>Browser-Based<br><span>Geoscience Tools</span></h1>
+    <p>
+      Nine free calculators covering sedimentology, geochemistry, hydrogeology,
+      petrophysics, stratigraphy, and planetary geology. Click any card to open
+      the tool — no login, no download, runs entirely in your browser.
+    </p>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="search-wrap">
+    <input
+      type="text"
+      class="search-input"
+      id="tool-search"
+      placeholder="🔍  Search tools…"
+      autocomplete="off"
+    />
+  </div>
+
+  <!-- FILTER -->
+  <div class="filter-bar">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="Sedimentology">Sedimentology</button>
+    <button class="filter-btn" data-filter="Geochemistry">Geochemistry</button>
+    <button class="filter-btn" data-filter="Hydrogeology">Hydrogeology</button>
+    <button class="filter-btn" data-filter="Petrophysics">Petrophysics</button>
+    <button class="filter-btn" data-filter="Stratigraphy">Stratigraphy</button>
+    <button class="filter-btn" data-filter="Planetary">Planetary</button>
+  </div>
+
+  <!-- TOOL CARDS -->
+  <div class="tools-main">
+    <div class="tools-grid" id="tools-grid">
+
+      <!-- 01 Grain Size -->
+      <a href="grain-size/index.html" class="tool-card" data-cat="Sedimentology" data-keywords="grain size wentworth sediment classify mm phi micron">
+        <div class="tc-stripe"></div>
+        <div class="tc-body">
+          <div class="tc-top">
+            <div class="tc-icon">🪨</div>
+            <div class="tc-meta">
+              <span class="tc-cat">Sedimentology</span>
+              <span class="tc-num">Tool 01</span>
+            </div>
+          </div>
+          <div class="tc-title">Grain Size Classifier</div>
+          <div class="tc-desc">
+            Classify sediment grain size using the Wentworth Scale. Accepts input in millimetres,
+            micrometres, or Φ (phi) units. Returns sediment class, depositional environment
+            interpretation, and phi equivalent.
+          </div>
+          <div class="tc-tags">
+            <span class="tc-tag">Wentworth Scale</span>
+            <span class="tc-tag">mm / μm / Φ</span>
+            <span class="tc-tag">Depositional Env.</span>
+          </div>
+        </div>
+        <div class="tc-footer">
+          <span class="tc-open">Open Tool</span>
+          <span class="tc-arrow">→</span>
+        </div>
+      </a>
+
+      <!-- 02 CIA -->
+      <a href="cia/index.html" class="tool-card" data-cat="Geochemistry" data-keywords="CIA chemical index alteration weathering oxide al2o3 cao na2o k2o">
+        <div class="tc-stripe"></div>
+        <div class="tc-body">
+          <div class="tc-top">
+            <div class="tc-icon">⚗️</div>
+            <div class="tc-meta">
+              <span class="tc-cat">Geochemistry</span>
+              <span class="tc-num">Tool 02</span>
+            </div>
+          </div>
+          <div class="tc-title">CIA Calculator</div>
+          <div class="tc-desc">
+            Calculate the Chemical Index of Alteration (CIA) from major oxide weight percentages.
+            Quantifies the intensity of silicate chemical weathering with geological interpretation.
+          </div>
+          <div class="tc-tags">
+            <span class="tc-tag">Al₂O₃ · CaO* · Na₂O · K₂O</span>
+            <span class="tc-tag">Weathering Intensity</span>
+          </div>
+        </div>
+        <div class="tc-footer">
+          <span class="tc-open">Open Tool</span>
+          <span class="tc-arrow">→</span>
+        </div>
+      </a>
+
+      <!-- 03 Geo Indices -->
+      <a href="geo-indices/index.html" class="tool-card" data-cat="Geochemistry" data-keywords="PIA CIW ICV WIP CIA geochemical indices oxide weathering">
+        <div class="tc-stripe"></div>
+        <div class="tc-body">
+          <div class="tc-top">
+            <div class="tc-icon">📊</div>
+            <div class="tc-meta">
+              <span class="tc-cat">Geochemistry</span>
+              <span class="tc-num">Tool 03</span>
+            </div>
+          </div>
+          <div class="tc-title">Geochemical Indices</div>
+          <div class="tc-desc">
+            Compute five major geochemical weathering and maturity indices simultaneously —
+            CIA, PIA, CIW, ICV, and WIP — from a single major oxide dataset.
+          </div>
+          <div class="tc-tags">
+            <span class="tc-tag">CIA</span>
+            <span class="tc-tag">PIA</span>
+            <span class="tc-tag">CIW</span>
+            <span class="tc-tag">ICV</span>
+            <span class="tc-tag">WIP</span>
+          </div>
+        </div>
+        <div class="tc-footer">
+          <span class="tc-open">Open Tool</span>
+          <span class="tc-arrow">→</span>
+        </div>
+      </a>
+
+      <!-- 04 Darcy -->
+      <a href="darcy/index.html" class="tool-card" data-cat="Hydrogeology" data-keywords="darcy law groundwater flow hydraulic conductivity gradient permeability">
+        <div class="tc-stripe"></div>
+        <div class="tc-body">
+          <div class="tc-top">
+            <div class="tc-icon">💧</div>
+            <div class="tc-meta">
+              <span class="tc-cat">Hydrogeology</span>
+              <span class="tc-num">Tool 04</span>
+            </div>
+          </div>
+          <div class="tc-title">Darcy's Law Calculator</div>
+          <div class="tc-desc">
+            Solve for groundwater flow rate Q, hydraulic conductivity K, or hydraulic
+            gradient i using Darcy's Law (Q = K × i × A). Includes rock-type
+            conductivity reference.
+          </div>
+          <div class="tc-tags">
+            <span class="tc-tag">Flow Rate Q</span>
+            <span class="tc-tag">Conductivity K</span>
+            <span class="tc-tag">Gradient i</span>
+          </div>
+        </div>
+        <div class="tc-footer">
+          <span class="tc-open">Open Tool</span>
+          <span class="tc-arrow">→</span>
+        </div>
+      </a>
+
+      <!-- 05 Porosity -->
+      <a href="porosity/index.html" class="tool-card" data-cat="Petrophysics" data-keywords="porosity permeability density kozeny carman void volume rock">
+        <div class="tc-stripe"></div>
+        <div class="tc-body">
+          <div class="tc-top">
+            <div class="tc-icon">🔵</div>
+            <div class="tc-meta">
+              <span class="tc-cat">Petrophysics</span>
+              <span class="tc-num">Tool 05</span>
+            </div>
+          </div>
+          <div class="tc-title">Porosity Calculator</div>
+          <div class="tc-desc">
+            Calculate porosity from bulk/grain density or void/total volume. Optional
+            Kozeny-Carman permeability estimation. Includes rock-type porosity
+            reference table.
+          </div>
+          <div class="tc-tags">
+            <span class="tc-tag">Density Method</span>
+            <span class="tc-tag">Volume Method</span>
+            <span class="tc-tag">Kozeny-Carman</span>
+          </div>
+        </div>
+        <div class="tc-footer">
+          <span class="tc-open">Open Tool</span>
+          <span class="tc-arrow">→</span>
+        </div>
+      </a>
+
+      <!-- 06 Phi -->
+      <a href="phi/index.html" class="tool-card" data-cat="Sedimentology" data-keywords="phi scale convert mm millimetre grain size wentworth sediment">
+        <div class="tc-stripe"></div>
+        <div class="tc-body">
+          <div class="tc-top">
+            <div class="tc-icon" style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;color:#f59e0b;">Φ</div>
+            <div class="tc-meta">
+              <span class="tc-cat">Sedimentology</span>
+              <span class="tc-num">Tool 06</span>
+            </div>
+          </div>
+          <div class="tc-title">Phi Scale Converter</div>
+          <div class="tc-desc">
+            Bidirectional conversion between millimetres and the phi (Φ) scale using
+            Φ = −log₂(d mm). Includes a full Wentworth grain-size reference table.
+          </div>
+          <div class="tc-tags">
+            <span class="tc-tag">mm → Φ</span>
+            <span class="tc-tag">Φ → mm</span>
+            <span class="tc-tag">Reference Table</span>
+          </div>
+        </div>
+        <div class="tc-footer">
+          <span class="tc-open">Open Tool</span>
+          <span class="tc-arrow">→</span>
+        </div>
+      </a>
+
+      <!-- 07 Rock Density -->
+      <a href="rock-density/index.html" class="tool-card" data-cat="Petrophysics" data-keywords="rock density bulk mineral mass volume granite basalt sediment">
+        <div class="tc-stripe"></div>
+        <div class="tc-body">
+          <div class="tc-top">
+            <div class="tc-icon">⚖️</div>
+            <div class="tc-meta">
+              <span class="tc-cat">Petrophysics</span>
+              <span class="tc-num">Tool 07</span>
+            </div>
+          </div>
+          <div class="tc-title">Rock Density Estimator</div>
+          <div class="tc-desc">
+            Calculate bulk density from direct mass/volume measurements or estimate from
+            mineral volume fractions. Returns rock-type inference with geological context.
+          </div>
+          <div class="tc-tags">
+            <span class="tc-tag">Mass / Volume</span>
+            <span class="tc-tag">Mineral Mix</span>
+            <span class="tc-tag">Rock Inference</span>
+          </div>
+        </div>
+        <div class="tc-footer">
+          <span class="tc-open">Open Tool</span>
+          <span class="tc-arrow">→</span>
+        </div>
+      </a>
+
+      <!-- 08 Geo Time -->
+      <a href="geo-time/index.html" class="tool-card" data-cat="Stratigraphy" data-keywords="geologic time scale eon era period epoch cambrian jurassic cretaceous chronostratigraphic">
+        <div class="tc-stripe"></div>
+        <div class="tc-body">
+          <div class="tc-top">
+            <div class="tc-icon">⏳</div>
+            <div class="tc-meta">
+              <span class="tc-cat">Stratigraphy</span>
+              <span class="tc-num">Tool 08</span>
+            </div>
+          </div>
+          <div class="tc-title">Geologic Time Scale</div>
+          <div class="tc-desc">
+            Interactive reference for the International Chronostratigraphic Chart. Filter by
+            eon, search by period or era, and view key events and typical rock associations
+            for each interval.
+          </div>
+          <div class="tc-tags">
+            <span class="tc-tag">Eon / Era / Period</span>
+            <span class="tc-tag">Key Events</span>
+            <span class="tc-tag">Typical Rocks</span>
+          </div>
+        </div>
+        <div class="tc-footer">
+          <span class="tc-open">Open Tool</span>
+          <span class="tc-arrow">→</span>
+        </div>
+      </a>
+
+      <!-- 09 Crater -->
+      <a href="crater/index.html" class="tool-card" data-cat="Planetary" data-keywords="impact crater calculator pi scaling impactor planetary geology mars moon earth venus">
+        <div class="tc-stripe"></div>
+        <div class="tc-body">
+          <div class="tc-top">
+            <div class="tc-icon">⭕</div>
+            <div class="tc-meta">
+              <span class="tc-cat">Planetary</span>
+              <span class="tc-num">Tool 09</span>
+            </div>
+          </div>
+          <div class="tc-title">Impact Crater Calculator</div>
+          <div class="tc-desc">
+            Estimate final crater diameter from impactor properties using Pi-group scaling
+            relations (Schmidt & Housen 1987; Melosh 1989). Supports Earth, Mars,
+            Moon, and Venus gravity fields.
+          </div>
+          <div class="tc-tags">
+            <span class="tc-tag">Pi-Scaling</span>
+            <span class="tc-tag">Earth · Mars · Moon · Venus</span>
+            <span class="tc-tag">KE Estimate</span>
+          </div>
+        </div>
+        <div class="tc-footer">
+          <span class="tc-open">Open Tool</span>
+          <span class="tc-arrow">→</span>
+        </div>
+      </a>
+
+      <!-- no results -->
+      <div class="no-results" id="no-results">
+        <div class="nr-icon">🔍</div>
+        <p>No tools match your search. Try a different term or category.</p>
+      </div>
+
+    </div><!-- /tools-grid -->
+  </div><!-- /tools-main -->
+
+  <footer>
+    <a href="../index.html">LithoLab</a> &nbsp;·&nbsp;
+    Free geoscience tools · University of Barishal, Bangladesh &nbsp;·&nbsp;
+    <a href="../about/index.html">About the Author</a>
+  </footer>
+
+</div><!-- /page -->
+
+<script>
+/* ── SPACE CANVAS ── */
+(function(){
+  const canvas=document.getElementById('space-canvas');
+  const ctx=canvas.getContext('2d');
+  let W,H,stars=[],shoots=[];
+  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+  function star(){
+    const s=Math.random();
+    return{x:Math.random()*W,y:Math.random()*H,r:s*1.6+.3,a:s*.6+.15,
+      ba:0,td:.008+Math.random()*.015,tdir:Math.random()<.5?1:-1,
+      sp:.008+Math.random()*.02,
+      c:['#fff','#e8eeff','#fff4e0','#e0f4ff'][Math.floor(Math.random()*4)]};
+  }
+  function shoot(){
+    const ang=(Math.random()*25+8)*Math.PI/180,sp=7+Math.random()*7;
+    return{x:Math.random()*W,y:Math.random()*H*.45,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,life:1,decay:.014+Math.random()*.008};
+  }
+  function init(){resize();stars=[];for(let i=0;i<260;i++){const s=star();s.ba=s.a;stars.push(s);}}
+  let lt=0;
+  function loop(t){
+    ctx.clearRect(0,0,W,H);
+    const g=ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,'#04080f');g.addColorStop(.5,'#060c18');g.addColorStop(1,'#040810');
+    ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    /* nebulae */
+    [{x:W*.2,y:H*.3,r:200,c:'rgba(6,182,212,'},{x:W*.8,y:H*.6,r:180,c:'rgba(139,92,246,'},{x:W*.5,y:H*.8,r:220,c:'rgba(245,158,11,'}].forEach(n=>{
+      const gr=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r);
+      gr.addColorStop(0,n.c+'0.018)');gr.addColorStop(1,n.c+'0)');
+      ctx.beginPath();ctx.arc(n.x,n.y,n.r,0,Math.PI*2);ctx.fillStyle=gr;ctx.fill();
+    });
+    /* stars */
+    stars.forEach(s=>{
+      s.a+=s.td*s.tdir;
+      if(s.a>s.ba+.12||s.a<s.ba-.12)s.tdir*=-1;
+      s.a=Math.max(.05,Math.min(1,s.a));
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,255,255,${s.a})`;ctx.fill();
+      s.y+=s.sp;if(s.y>H+2){s.y=-2;s.x=Math.random()*W;}
+    });
+    /* shooting stars */
+    if(t-lt>3000+Math.random()*4000){shoots.push(shoot());lt=t;}
+    shoots=shoots.filter(s=>s.life>0);
+    shoots.forEach(s=>{
+      ctx.save();ctx.globalAlpha=s.life;
+      const gr=ctx.createLinearGradient(s.x,s.y,s.x-s.vx*12,s.y-s.vy*12);
+      gr.addColorStop(0,'rgba(255,255,230,.9)');gr.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.strokeStyle=gr;ctx.lineWidth=1.5;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.x-s.vx*12,s.y-s.vy*12);ctx.stroke();
+      ctx.restore();s.x+=s.vx;s.y+=s.vy;s.life-=s.decay;
+    });
+    requestAnimationFrame(loop);
+  }
+  window.addEventListener('resize',init);
+  init();requestAnimationFrame(loop);
+})();
+
+/* ── MOBILE NAV ── */
+const tog=document.getElementById('nav-toggle');
+const lnk=document.getElementById('nav-links');
+if(tog&&lnk){
+  tog.addEventListener('click',()=>{lnk.classList.toggle('open');tog.textContent=lnk.classList.contains('open')?'✕':'☰';});
+  document.addEventListener('click',e=>{if(!e.target.closest('nav')){lnk.classList.remove('open');tog.textContent='☰';}});
+}
+
+/* ── FILTER ── */
+const filterBtns=document.querySelectorAll('.filter-btn');
+const cards=document.querySelectorAll('.tool-card');
+const noRes=document.getElementById('no-results');
+let activeFilter='all';
+let searchTerm='';
+
+function applyFilters(){
+  let visible=0;
+  cards.forEach(c=>{
+    const cat=c.dataset.cat||'';
+    const kw=(c.dataset.keywords||'')+' '+(c.querySelector('.tc-title')?.textContent||'')+' '+(c.querySelector('.tc-desc')?.textContent||'');
+    const matchFilter=activeFilter==='all'||cat===activeFilter;
+    const matchSearch=searchTerm===''||kw.toLowerCase().includes(searchTerm);
+    if(matchFilter&&matchSearch){c.classList.remove('hidden');visible++;}
+    else{c.classList.add('hidden');}
+  });
+  noRes.classList.toggle('show',visible===0);
+}
+
+filterBtns.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    filterBtns.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter=btn.dataset.filter;
+    applyFilters();
+  });
+});
+
+document.getElementById('tool-search').addEventListener('input',e=>{
+  searchTerm=e.target.value.trim().toLowerCase();
+  applyFilters();
+});
+
+/* ── SCROLL REVEAL ── */
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='translateY(0)';obs.unobserve(e.target);}});
+},{threshold:.08});
+cards.forEach((c,i)=>{
+  c.style.opacity='0';c.style.transform='translateY(20px)';
+  c.style.transition=`opacity .45s ease ${i*.06}s, transform .45s ease ${i*.06}s, border-color .3s, background .3s, box-shadow .3s`;
+  obs.observe(c);
+});
+</script>
+
+</body>
+</html>
